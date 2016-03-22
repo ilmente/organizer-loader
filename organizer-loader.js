@@ -1,70 +1,67 @@
 /**
- *
- * Organizer Loader for Webpack
- * @author: Alessandro Bellini - ilmente <hello@ilmente.it>
- *
+ * Demoshop theme comfiguration
  */
 
 'use strict';
 
 let path = require('path');
-let loaderUtils = require('loader-utils');
+let R = require('ramda');
+let cwd = process.cwd();
 
-module.exports = function(content) {
-    let self = this;
-    self.cacheable && self.cacheable();
+// webpack
+let webpack = require('webpack');
+let ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-    if (!self.emitFile) {
-        throw new Error('organizer-loader -> emitFile is required from module system');
-    }
+let isDebug = process.argv.indexOf('--debug') > -1;
+let isProduction = process.argv.indexOf('--production') > -1;
 
-    if (!self.options.organizerRules) {
-        throw new Error('organizer-loader -> organizerRules are missing: add them to your configuration');
-    }
-
-    let url;
-    let query = loaderUtils.parseQuery(self.query);
-    let rulesId = query.rules;
-    let rules = self.options.organizerRules[rulesId] || [];
-    
-    function getUrl(rule) {
-        return loaderUtils.interpolateName(self, rule.name || '[name].[ext]', {
-            content: content,
-            context: rule.context,
-            regExp: ''
-        });
-    }
-
-    rules.forEach(function(rule) {
-        rule.context = rule.context || self.options.context;
-
-        if (!url) {
-            if (rule.search) {
-                let resourcePath = self.resourcePath.replace(rule.context, '');
-                let rootSearch = resourcePath.search(rule.search);
-
-                if (rootSearch > -1) {
-                    let rootPath = resourcePath.substring(rootSearch + rule.search.length, resourcePath.length).replace(/^\//i, '');
-                    let rootName = rootPath.substring(0, rootPath.indexOf('/')).replace(/\//gmi, '');
-                    let rootRelativePath = rootPath.replace(rootName, '').replace(/^\//i, '');
-
-                    url = getUrl(rule)
-                        .replace(/\[bundle\]/gmi, rootName)
-                        .replace(/\[bundle-path\]/gmi, rootRelativePath)
-                        .replace(/\/\//gmi, '/');
-                }
-            } else {
-                url = getUrl(rule);
-            }
-        }
-    });
-
-    if (!url) {
-        throw new Error(`organizer-loader -> ${self.resourcePath} cannot be loaded: define a rule to handle it`);
-    }
-
-    self.emitFile(url, content);
-    return 'module.exports = __webpack_public_path__ + ' + JSON.stringify(url) + ';';
-}
-
-module.exports.raw = true;
+module.exports = {
+    module: {
+        loaders: [{
+            test: /\.css\??(\d*\w*=?\.?)+$/i,
+            loader: ExtractTextPlugin.extract('style', 'css')
+        }, {
+            test: /\.scss$/i,
+            loader: ExtractTextPlugin.extract('style', 'css!resolve-url!sass?sourceMap')
+        }, {
+            test: /\.(ttf|woff2?|eot)\??(\d*\w*=?\.?)+$/i,
+            loader: 'file?name=/assets/demoshop/fonts/[name].[ext]'
+        }, {
+            test: /\.(jpe?g|png|gif|svg)\??(\d*\w*=?\.?)+$/i,
+            loader: 'organizer?rules=images',
+        }]
+    },
+    organizerRules: {
+        images: [{
+            container: /fonts\//,
+            name: '/assets/demoshop/fonts/[name].[ext]'
+        }, {
+            container: /node_modules\//,
+            name: '/assets/demoshop/img/modules/[bundle]/[name].[ext]'
+        }, {
+            name: '/assets/demoshop/img/[name].[ext]'
+        }]
+    },
+    output: {
+        path: path.join(cwd, './public/Yves'),
+        filename: '/assets/demoshop/js/[name].js'
+    },
+    plugins: [
+        new ExtractTextPlugin('assets/demoshop/css/[name].css', {
+            allChunks: true
+        }),
+        new webpack.ProvidePlugin({
+            $: 'jquery',
+            jQuery: 'jquery',
+            'window.jQuery': 'jquery'
+        }),
+        new webpack.DefinePlugin({
+            PRODUCTION: isProduction,
+            WATCH: isDebug
+        })
+    ],
+    watchOptions: {
+        poll: true
+    },
+    devtool: 'sourceMap'
+};
