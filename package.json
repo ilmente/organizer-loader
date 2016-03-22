@@ -1,0 +1,22 @@
+{
+  "name": "organizer-loader",
+  "version": "0.1.0",
+  "description": "Organizer Loader for Webpack",
+  "main": "organizer-loader.js",
+  "scripts": {
+    "test": "echo 'Missing test! I'm working on it..."
+  },
+  "author": {
+    "name": "Alessandro Bellini",
+    "email": "hello@ilmente.com",
+    "url": "http://ilmente.com"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=5.0.0",
+    "npm": ">=3.3.6"
+  },
+  "dependencies": {
+    "loader-utils": "^0.2.12"
+  }
+}
