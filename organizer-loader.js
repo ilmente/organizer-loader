@@ -24,8 +24,8 @@ module.exports = function(content) {
 
     let url;
     let query = loaderUtils.parseQuery(self.query);
-    let id = query.id;
-    let rules = self.options.organizerRules[id] || {};
+    let rulesId = query.rules;
+    let rules = self.options.organizerRules[rulesId] || [];
     
     function getUrl(rule) {
         return loaderUtils.interpolateName(self, rule.name || '[name].[ext]', {
@@ -39,18 +39,19 @@ module.exports = function(content) {
         rule.context = rule.context || self.options.context;
 
         if (!url) {
-            let resourcePath = self.resourcePath.replace(rule.context, '');
-            let rootSearch = resourcePath.lastIndexOf(rule.search);
-
             if (rule.search) {
+                let resourcePath = self.resourcePath.replace(rule.context, '');
+                let rootSearch = resourcePath.search(rule.search);
+
                 if (rootSearch > -1) {
                     let rootPath = resourcePath.substring(rootSearch + rule.search.length, resourcePath.length).replace(/^\//i, '');
                     let rootName = rootPath.substring(0, rootPath.indexOf('/')).replace(/\//gmi, '');
                     let rootRelativePath = rootPath.replace(rootName, '').replace(/^\//i, '');
 
                     url = getUrl(rule)
-                        .replace(/\[root-name\]/gmi, rootName)
-                        .replace(/\[root-relative-path\]/gmi, rootRelativePath);
+                        .replace(/\[bundle\]/gmi, rootName)
+                        .replace(/\[bundle-path\]/gmi, rootRelativePath)
+                        .replace(/\/\//gmi, '/');
                 }
             } else {
                 url = getUrl(rule);
